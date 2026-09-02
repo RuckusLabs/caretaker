@@ -1,13 +1,20 @@
 name: Weekly caretaker summary email
 
-# Re-touched to force GitHub to (re-)index this workflow after enabling
-# Actions permissions for this repo.
 on:
   schedule:
     # Every Monday at 08:00 UTC. GitHub Actions cron is always UTC — adjust
     # the hour here to match your local time (e.g. subtract your UTC offset).
     - cron: "0 8 * * 1"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Send a test email using sample data instead of live Supabase data"
+        type: boolean
+        default: false
+      test_recipient:
+        description: "Optional: send the test email here instead of the real RECIPIENT_EMAIL list"
+        type: string
+        required: false
 
 jobs:
   send-summary:
@@ -26,4 +33,6 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          TEST_MODE: ${{ inputs.test_mode }}
+          TEST_RECIPIENT: ${{ inputs.test_recipient }}
         run: node scripts/send-weekly-email.mjs

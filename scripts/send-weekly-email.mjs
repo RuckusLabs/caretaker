@@ -7,10 +7,18 @@
 // "unlisted" entry) — not a fresh lookup — so this reflects what was true
 // at the time of the shift even if rates change later.
 
-const SUPABASE_URL = requireEnv("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+// TEST_MODE=true skips Supabase entirely and renders/sends with sample
+// data, so you can preview styling changes on demand without waiting for
+// real check-ins. TEST_RECIPIENT optionally overrides where it's sent, so
+// a test run doesn't have to go to the real (possibly multi-person)
+// RECIPIENT_EMAIL list.
+const TEST_MODE = process.env.TEST_MODE === "true";
+
+const SUPABASE_URL = TEST_MODE ? null : requireEnv("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = TEST_MODE ? null : requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = requireEnv("RESEND_API_KEY");
-const RECIPIENT_EMAIL = requireEnv("RECIPIENT_EMAIL");
+const RECIPIENT_EMAIL =
+  process.env.TEST_RECIPIENT || requireEnv("RECIPIENT_EMAIL");
 const FROM_EMAIL = process.env.FROM_EMAIL || "Caretaker App <onboarding@resend.dev>";
 
 function requireEnv(name) {
@@ -41,6 +49,44 @@ async function fetchLastWeeksCheckins() {
   }
 
   return { rows: await res.json(), since };
+}
+
+function getSampleCheckins() {
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+
+  const shift = (daysAgo, startHour, hours, name, phone, rate) => {
+    const signedIn = new Date();
+    signedIn.setDate(signedIn.getDate() - daysAgo);
+    signedIn.setHours(startHour, 0, 0, 0);
+    const signedOut = new Date(signedIn.getTime() + hours * 3600000);
+    return {
+      name,
+      phone,
+      rate,
+      signed_in_at: signedIn.toISOString(),
+      signed_out_at: signedOut.toISOString(),
+    };
+  };
+
+  return {
+    since,
+    rows: [
+      shift(6, 8, 4, "Martha", "REDACTED-PHONE", 25),
+      shift(5, 8, 4, "Martha", "REDACTED-PHONE", 25),
+      shift(6, 13, 5, "Cinthya", "REDACTED-PHONE", 25),
+      shift(4, 13, 5, "Cinthya", "REDACTED-PHONE", 25),
+      shift(3, 8, 6, "Sam Rivera", "(555) 010-0100", 18),
+      // An unfinished shift (no signed_out_at) to make sure it's excluded.
+      {
+        name: "Audyna",
+        phone: "REDACTED-PHONE",
+        rate: 20,
+        signed_in_at: new Date().toISOString(),
+        signed_out_at: null,
+      },
+    ],
+  };
 }
 
 function summarize(rows) {
@@ -214,7 +260,7 @@ async function sendEmail(html, since, until) {
     body: JSON.stringify({
       from: FROM_EMAIL,
       to: RECIPIENT_EMAIL.split(",").map((email) => email.trim()),
-      subject: `🌿 Weekly Caretaker Summary (${formatDate(since)} – ${formatDate(until)})`,
+      subject: `${TEST_MODE ? "[TEST] " : ""}🌿 Weekly Caretaker Summary (${formatDate(since)} – ${formatDate(until)})`,
       html,
     }),
   });
@@ -225,8 +271,12 @@ async function sendEmail(html, since, until) {
 }
 
 const until = new Date();
-const { rows, since } = await fetchLastWeeksCheckins();
+const { rows, since } = TEST_MODE
+  ? getSampleCheckins()
+  : await fetchLastWeeksCheckins();
 const summaries = summarize(rows);
 const html = renderHtml(summaries, rows, since, until);
 await sendEmail(html, since, until);
-console.log(`Sent weekly summary for ${summaries.length} caretaker(s).`);
+console.log(
+  `${TEST_MODE ? "[TEST] " : ""}Sent weekly summary for ${summaries.length} caretaker(s) to ${RECIPIENT_EMAIL}.`
+);
