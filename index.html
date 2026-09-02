@@ -9,7 +9,12 @@
 <body>
   <!-- Sign in -->
   <main class="card" id="screen-signin">
-    <h1>Caretaker Check-In</h1>
+    <div class="brand">
+      <div class="icon">🌿</div>
+      <div>
+        <h1>Caretaker Check-In</h1>
+      </div>
+    </div>
     <p class="subtitle">Sign in to start your shift.</p>
 
     <label for="name">Name</label>
@@ -24,7 +29,12 @@
 
   <!-- Active shift -->
   <main class="card" id="screen-active" hidden>
-    <h1>You're signed in</h1>
+    <div class="brand">
+      <div class="icon">🌿</div>
+      <div>
+        <h1>You're signed in</h1>
+      </div>
+    </div>
     <p class="subtitle" id="active-subtitle"></p>
 
     <div class="timer">
@@ -34,13 +44,18 @@
 
     <div id="checklist-container"></div>
 
-    <button class="btn-danger" id="btn-signout" style="margin-top:24px;">Sign Out</button>
+    <button class="btn-danger" id="btn-signout">Sign Out</button>
     <p class="error" id="active-error"></p>
   </main>
 
   <!-- Summary -->
   <main class="card" id="screen-summary" hidden>
-    <h1>Shift complete</h1>
+    <div class="brand">
+      <div class="icon">✅</div>
+      <div>
+        <h1>Shift complete</h1>
+      </div>
+    </div>
     <p class="subtitle">Thanks for your work!</p>
 
     <div class="summary-row">
