@@ -166,7 +166,20 @@ function renderHtml(summaries, rows, since, until) {
        </details>`
     : "";
 
+  // Hidden preheader: controls the inbox preview snippet (Apple Mail,
+  // Gmail, Outlook, etc. otherwise pull it straight from the visible body
+  // text, which just dumps the header/table as an ugly run-on string). The
+  // zero-width-space padding after it stops clients from appending more of
+  // the visible body onto the end of the snippet.
+  const preheader = `${totalHours.toFixed(2)} hrs worked · ${formatCurrency(totalPay)} total owed`;
+  const preheaderHtml = `
+    <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#eef6ee;opacity:0;">
+      ${preheader}
+      ${"&zwnj;&nbsp;".repeat(80)}
+    </div>`;
+
   return `
+  ${preheaderHtml}
   <div style="background:#eef6ee;padding:32px 16px;">
     <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${COLORS.border};">
       <div style="background:${COLORS.accent};padding:24px 28px;">
@@ -175,7 +188,10 @@ function renderHtml(summaries, rows, since, until) {
           Weekly Caretaker Summary
         </h1>
         <p style="margin:0;color:#e5f5ea;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
-          ${totalHours.toFixed(2)} hrs worked · ${formatCurrency(totalPay)} total owed
+          ${formatDate(since)} – ${formatDate(until)}
+        </p>
+        <p style="margin:4px 0 0;color:#e5f5ea;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
+          ${preheader}
         </p>
       </div>
       <div style="padding:24px 28px 28px;">
