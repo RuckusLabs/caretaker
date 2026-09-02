@@ -61,8 +61,8 @@ function summarize(rows) {
   return [...byCaretaker.values()].sort((a, b) => b.hours - a.hours);
 }
 
-function renderHtml(summaries) {
-  const rows = summaries
+function renderHtml(summaries, rows) {
+  const summaryRows = summaries
     .map(
       (s) => `
         <tr>
@@ -82,14 +82,52 @@ function renderHtml(summaries) {
              <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Phone</th>
            </tr>
          </thead>
-         <tbody>${rows}</tbody>
+         <tbody>${summaryRows}</tbody>
        </table>`
     : `<p style="font-family:sans-serif;">No completed shifts in the past week.</p>`;
+
+  const detailRows = [...rows]
+    .filter((row) => row.signed_out_at)
+    .sort((a, b) => new Date(a.signed_in_at) - new Date(b.signed_in_at))
+    .map(
+      (row) => `
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${escapeHtml(row.name)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${formatDateTime(row.signed_in_at)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${formatDateTime(row.signed_out_at)}</td>
+        </tr>`
+    )
+    .join("");
+
+  const details = rows.length
+    ? `<details style="margin-top:20px;font-family:sans-serif;font-size:14px;">
+         <summary style="cursor:pointer;font-weight:bold;">All check-ins this week</summary>
+         <table style="border-collapse:collapse;width:100%;max-width:600px;margin-top:12px;">
+           <thead>
+             <tr>
+               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Name</th>
+               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Time in</th>
+               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Time out</th>
+             </tr>
+           </thead>
+           <tbody>${detailRows}</tbody>
+         </table>
+       </details>`
+    : "";
 
   return `<div>
     <h2 style="font-family:sans-serif;">Weekly Caretaker Summary</h2>
     ${body}
+    ${details}
   </div>`;
+}
+
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "UTC",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function escapeHtml(str) {
@@ -121,6 +159,6 @@ async function sendEmail(html) {
 
 const rows = await fetchLastWeeksCheckins();
 const summaries = summarize(rows);
-const html = renderHtml(summaries);
+const html = renderHtml(summaries, rows);
 await sendEmail(html);
 console.log(`Sent weekly summary for ${summaries.length} caretaker(s).`);
