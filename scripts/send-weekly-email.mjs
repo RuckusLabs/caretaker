@@ -89,15 +89,25 @@ function getSampleCheckins() {
   };
 }
 
+// Rounds a single shift's raw hours to the nearest whole hour for pay
+// purposes: over 30 minutes past the hour rounds up, 30 minutes or under
+// rounds down.
+function roundHoursForPay(rawHours) {
+  const wholeHours = Math.floor(rawHours);
+  const extraMinutes = (rawHours - wholeHours) * 60;
+  return extraMinutes > 30 ? wholeHours + 1 : wholeHours;
+}
+
 function summarize(rows) {
   const byCaretaker = new Map();
 
   for (const row of rows) {
     if (!row.signed_out_at) continue;
-    const hours =
+    const rawHours =
       (new Date(row.signed_out_at).getTime() -
         new Date(row.signed_in_at).getTime()) /
       3600000;
+    const hours = roundHoursForPay(rawHours);
 
     const key = `${row.name}|${row.phone}`;
     const existing = byCaretaker.get(key) || {
