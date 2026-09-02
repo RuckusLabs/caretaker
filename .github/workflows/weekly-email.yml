@@ -1,5 +1,7 @@
 name: Weekly caretaker summary email
 
+# Re-touched to force GitHub to (re-)index this workflow after enabling
+# Actions permissions for this repo.
 on:
   schedule:
     # Every Monday at 08:00 UTC. GitHub Actions cron is always UTC — adjust
