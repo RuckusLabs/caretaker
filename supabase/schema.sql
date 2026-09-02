@@ -30,5 +30,11 @@ create policy "anon can update checkins"
   using (true)
   with check (true);
 
--- Only the weekly email script (using the service role key, which bypasses
--- RLS) needs to read rows, so no anon select policy is created.
+-- The app calls .insert(...).select() and .update(...).select() to get the
+-- row back after writing it. Postgres checks a SELECT policy against rows
+-- returned by a RETURNING clause, so a select policy is required even
+-- though the app never lists/browses other people's rows.
+create policy "anon can select checkins"
+  on checkins for select
+  to anon
+  using (true);
