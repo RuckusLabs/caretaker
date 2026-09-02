@@ -2,9 +2,10 @@ name: Weekly caretaker summary email
 
 on:
   schedule:
-    # Every Monday at 08:00 UTC. GitHub Actions cron is always UTC — adjust
-    # the hour here to match your local time (e.g. subtract your UTC offset).
-    - cron: "0 8 * * 1"
+    # Every Monday at 7:15am MST. GitHub Actions cron is always UTC, and
+    # MST (UTC-7) doesn't observe daylight saving, so this is a fixed
+    # 14:15 UTC year-round — no DST adjustment needed.
+    - cron: "15 14 * * 1"
   workflow_dispatch:
     inputs:
       test_mode:
