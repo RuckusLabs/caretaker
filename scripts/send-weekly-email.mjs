@@ -175,7 +175,7 @@ function renderHtml(summaries, rows, since, until) {
           Weekly Caretaker Summary
         </h1>
         <p style="margin:0;color:#e5f5ea;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
-          ${formatDate(since)} – ${formatDate(until)}
+          ${totalHours.toFixed(2)} hrs worked · ${formatCurrency(totalPay)} total owed
         </p>
       </div>
       <div style="padding:24px 28px 28px;">
