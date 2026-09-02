@@ -1,0 +1,27 @@
+name: Weekly caretaker summary email
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC. GitHub Actions cron is always UTC — adjust
+    # the hour here to match your local time (e.g. subtract your UTC offset).
+    - cron: "0 8 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  send-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send weekly summary email
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        run: node scripts/send-weekly-email.mjs

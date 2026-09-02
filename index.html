@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Caretaker Check-In</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sign in -->
+  <main class="card" id="screen-signin">
+    <h1>Caretaker Check-In</h1>
+    <p class="subtitle">Sign in to start your shift.</p>
+
+    <label for="name">Name</label>
+    <input type="text" id="name" autocomplete="name" placeholder="Your name" />
+
+    <label for="phone">Phone number</label>
+    <input type="tel" id="phone" autocomplete="tel" placeholder="Your phone number" />
+
+    <button class="btn-primary" id="btn-signin">Sign In</button>
+    <p class="error" id="signin-error"></p>
+  </main>
+
+  <!-- Active shift -->
+  <main class="card" id="screen-active" hidden>
+    <h1>You're signed in</h1>
+    <p class="subtitle" id="active-subtitle"></p>
+
+    <div class="timer">
+      <div class="elapsed" id="elapsed">00:00:00</div>
+      <div class="shift-label" id="shift-label"></div>
+    </div>
+
+    <div id="checklist-container"></div>
+
+    <button class="btn-danger" id="btn-signout" style="margin-top:24px;">Sign Out</button>
+    <p class="error" id="active-error"></p>
+  </main>
+
+  <!-- Summary -->
+  <main class="card" id="screen-summary" hidden>
+    <h1>Shift complete</h1>
+    <p class="subtitle">Thanks for your work!</p>
+
+    <div class="summary-row">
+      <span class="label">Hours worked</span>
+      <span id="summary-hours"></span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Signed in</span>
+      <span id="summary-signin"></span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Signed out</span>
+      <span id="summary-signout"></span>
+    </div>
+
+    <div class="checklist-group">
+      <h2>Checklist completed</h2>
+      <div id="summary-checklist"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-done">Done</button>
+  </main>
+
+  <!-- Double-confirm overlay -->
+  <div class="confirm-overlay" id="confirm-overlay" hidden>
+    <div class="confirm-box" id="confirm-box"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="checklists.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
