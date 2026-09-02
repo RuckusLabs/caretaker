@@ -125,8 +125,11 @@
 
   async function loadCaretakers() {
     try {
-      const res = await fetch("caretakers.json");
-      caretakers = await res.json();
+      const { data, error } = await supabase
+        .from("caretakers")
+        .select("name,phone,rate");
+      if (error) throw error;
+      caretakers = data;
     } catch (err) {
       console.error(err);
       caretakers = [];

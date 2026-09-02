@@ -1,11 +1,10 @@
 -- Caretaker check-in app schema.
--- Run this in the Supabase SQL editor for your project. This drops any
--- existing checkins table first, so only run it when it's fine to lose
--- whatever check-in history is already there.
+-- Safe to re-run: uses "if not exists" everywhere, so running this again
+-- against a project that already has real check-in history will NOT drop
+-- or lose any of it. (An earlier version of this file dropped the table
+-- unconditionally — that's no longer the case.)
 
-drop table if exists checkins cascade;
-
-create table checkins (
+create table if not exists checkins (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   phone text not null,
@@ -24,11 +23,16 @@ alter table checkins enable row level security;
 -- so this does not stop someone from editing another row if they know its
 -- id. That's an accepted tradeoff for an internal, low-stakes tool with no
 -- sensitive data beyond a name and phone number.
+--
+-- Postgres has no "create policy if not exists", so each policy is dropped
+-- first to keep this file safely re-runnable.
+drop policy if exists "anon can insert checkins" on checkins;
 create policy "anon can insert checkins"
   on checkins for insert
   to anon
   with check (true);
 
+drop policy if exists "anon can update checkins" on checkins;
 create policy "anon can update checkins"
   on checkins for update
   to anon
@@ -39,7 +43,48 @@ create policy "anon can update checkins"
 -- row back after writing it. Postgres checks a SELECT policy against rows
 -- returned by a RETURNING clause, so a select policy is required even
 -- though the app never lists/browses other people's rows.
+drop policy if exists "anon can select checkins" on checkins;
 create policy "anon can select checkins"
   on checkins for select
   to anon
   using (true);
+
+-- Caretaker roster, editable from the admin page. anon (the check-in app)
+-- can only read it, to populate the name dropdown and pull each
+-- caretaker's rate; only a logged-in (authenticated) admin user can add,
+-- edit, or remove caretakers.
+create table if not exists caretakers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text not null,
+  rate numeric not null,
+  created_at timestamptz not null default now()
+);
+
+alter table caretakers enable row level security;
+
+drop policy if exists "anon can read caretakers" on caretakers;
+create policy "anon can read caretakers"
+  on caretakers for select
+  to anon
+  using (true);
+
+drop policy if exists "admin can manage caretakers" on caretakers;
+create policy "admin can manage caretakers"
+  on caretakers for all
+  to authenticated
+  using (true)
+  with check (true);
+
+-- One-time seed of the current roster. Safe to re-run: only inserts if the
+-- table is empty, so it won't duplicate rows or overwrite edits made from
+-- the admin page later.
+insert into caretakers (name, phone, rate)
+select * from (values
+  ('Martha', 'REDACTED-PHONE', 25),
+  ('Cinthya', 'REDACTED-PHONE', 25),
+  ('Audyna', 'REDACTED-PHONE', 20),
+  ('Melissa', 'REDACTED-PHONE', 25),
+  ('Malique Saldo', 'REDACTED-PHONE', 22)
+) as seed(name, phone, rate)
+where not exists (select 1 from caretakers);

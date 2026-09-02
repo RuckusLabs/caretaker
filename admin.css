@@ -1,0 +1,162 @@
+.admin-shell {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 32px 36px 40px;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0 12px 32px rgba(31, 122, 65, 0.1), 0 2px 6px rgba(31, 122, 65, 0.06);
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-header .brand {
+  margin-bottom: 0;
+}
+
+.admin-logout {
+  width: auto;
+  margin-top: 0;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 24px 0 20px;
+  border-bottom: 2px solid var(--border);
+}
+
+.admin-tab {
+  width: auto;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 10px 4px;
+  margin-bottom: -2px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-tab.active {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-toolbar label {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.admin-toolbar input[type="date"] {
+  width: auto;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+.admin-toolbar button {
+  width: auto;
+  margin-top: 0;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+}
+
+.admin-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--accent-dark);
+  color: var(--accent-dark);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-table tfoot td {
+  font-weight: 700;
+}
+
+.admin-table input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.admin-table .row-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-table .row-actions button {
+  width: auto;
+  margin-top: 0;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+.admin-subheading {
+  font-size: 0.95rem;
+  color: var(--accent-dark);
+  margin: 24px 0 12px;
+}
+
+.admin-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-add-row input {
+  flex: 1 1 160px;
+}
+
+.admin-add-row button {
+  width: auto;
+  margin-top: 0;
+  padding: 12px 20px;
+}
+
+.admin-empty {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.admin-details {
+  margin-top: 8px;
+}
+
+.admin-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent-dark);
+  padding: 8px 0;
+}

@@ -3,37 +3,52 @@
 A small static web app for caretakers to sign in/out of shifts, work through
 a shift checklist, and see a summary of hours worked. A weekly GitHub
 Actions job emails a summary table of hours per caretaker every Monday
-morning.
+morning. A separate admin page lets you manage the caretaker roster and
+review hours/pay for any date range.
 
 ## How it works
 
 - **Frontend**: plain HTML/CSS/JS, hosted on GitHub Pages. No build step.
+  `index.html` is the caretaker check-in app; `admin.html` is the admin
+  dashboard.
 - **Data storage**: [Supabase](https://supabase.com) (free tier Postgres).
   The browser talks to Supabase directly using its public "anon" key.
 - **Weekly email**: a GitHub Actions workflow (`.github/workflows/weekly-email.yml`)
-  runs every Monday at 08:00 UTC, queries Supabase for the past week's
+  runs every Monday at 7:15am MST, queries Supabase for the past week's
   completed shifts, and sends a summary email via [Resend](https://resend.com)
   (free tier).
 
-Caretakers pick their name from a dropdown (populated from `caretakers.json`)
-and enter their phone number as a PIN to sign in. There's no real
-authentication behind this — it just has to match the phone number on file —
-which is an accepted tradeoff for a low-stakes, internal family/care tool.
-A "Someone else (not listed)" option lets an unregistered person sign in by
-typing their own name, phone number, and hourly rate.
+Caretakers pick their name from a dropdown (populated from a `caretakers`
+table in Supabase) and enter their phone number as a PIN to sign in. There's
+no real authentication behind this — it just has to match the phone number
+on file — which is an accepted tradeoff for a low-stakes, internal
+family/care tool. A "Someone else (not listed)" option lets an unregistered
+person sign in by typing their own name, phone number, and hourly rate.
+
+The admin page (`admin.html`), by contrast, sits behind a real login
+(Supabase Auth email/password) since it can edit rates and see full history —
+see [Admin page](#admin-page) below.
 
 ## Setup
 
 ### 1. Supabase
 
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL editor, run the contents of `supabase/schema.sql`. Note: it
-   drops any existing `checkins` table first, so re-running it after schema
-   changes (like this) wipes prior check-in history.
+2. In the SQL editor, run the contents of `supabase/schema.sql`. It's safe
+   to re-run any time (e.g. after pulling schema updates) — it uses
+   `if not exists` everywhere and won't touch existing check-in history or
+   caretaker edits.
 3. Under **Project Settings → API**, copy:
    - the **Project URL**
    - the **anon public** key
    - the **service_role** key (keep this one secret — server-side only)
+4. Under **Authentication → Providers**, confirm **Email** is enabled
+   (it is by default).
+5. Under **Authentication → Users**, click **Add user** and create yourself
+   an admin account (your email + a password). Check **Auto Confirm User**
+   so it doesn't require an email confirmation step. This is the login for
+   `admin.html` — anyone with these credentials can manage caretakers and
+   view all check-in history, so keep the password private.
 
 ### 2. Resend
 
@@ -76,44 +91,39 @@ this without touching real check-in data or the real recipient list.
 ### 5. Enable GitHub Pages
 
 Repo **Settings → Pages** → set source to the branch this app lives on
-(root folder). The app will be served at your repo's Pages URL.
+(root folder). The app will be served at your repo's Pages URL, e.g.
+`https://you.github.io/caretaker/` for the check-in app and
+`https://you.github.io/caretaker/admin.html` for the admin page.
 
-## Adding or removing a caretaker
+## Admin page
 
-Everyone who can sign in by name (rather than using "Someone else") is
-listed in `caretakers.json` at the repo root. To add someone:
+Open `admin.html` (e.g. `https://you.github.io/caretaker/admin.html`) and
+sign in with the admin account you created in Supabase (see setup step 5
+above). No public link to it exists anywhere in the check-in app — bookmark
+the URL yourself.
 
-1. Open `caretakers.json` (edit directly on GitHub, or clone and edit
-   locally).
-2. Add a new entry to the array with their name, phone number (digits only,
-   no dashes/parens/spaces), and hourly rate:
+It has two tabs:
 
-   ```json
-   { "name": "Jane Doe", "phone": "5555550100", "rate": 20 }
-   ```
+- **Weekly Allocation** — pick any date range (defaults to the current week;
+  "This Week"/"Last Week" buttons for quick switching) and see hours, rate,
+  and amount owed per caretaker for that range, plus a collapsible list of
+  every individual check-in — the same "go back in time" view the weekly
+  email sends, but for any period you choose, on demand.
+- **Caretakers** — add, edit, or remove caretakers directly (name, phone,
+  hourly rate), no code or SQL required. Changes take effect immediately in
+  the check-in app's dropdown.
 
-   Don't forget the comma after the previous entry if you're adding to the
-   end of the list.
-3. Commit/save the change (if editing on GitHub.com, "Commit changes"
-   directly to this branch is enough — no PR needed).
-4. GitHub Pages redeploys automatically within a minute or two. Reload the
-   app and the new name will appear in the dropdown, alphabetized
-   automatically.
+Everyone who can sign in by name (rather than using "Someone else") lives in
+a `caretakers` table in Supabase, managed entirely from this page now. The
+dropdown shows names as "First L." (e.g. "Jane D.") when a last name is
+given, but the full name is still what's stored and shown in the weekly
+email, so it stays unambiguous for payment purposes. Changing a caretaker's
+rate only affects future shifts — each check-in stores the rate that was in
+effect at sign-in time, so past pay totals don't change retroactively.
 
-To remove someone, delete their entry the same way. To change someone's
-rate going forward, edit their `rate` value — past weeks are unaffected
-since each check-in stores the rate that was in effect at the time (see
-below).
-
-The dropdown shows names as "First L." (e.g. "Jane D.") when a last name is
-given, but the full name is still what's stored in Supabase and shown in the
-weekly email, so it stays unambiguous for payment purposes.
-
-The frontend fetches this file to populate the name dropdown, check the
-phone/PIN, and attach each caretaker's rate to their check-in. The weekly
-email script doesn't read this file itself — it uses whatever rate was
-stored on each check-in row, so changing a rate here only affects future
-shifts.
+If you ever need to edit the roster directly in SQL instead (bulk import,
+troubleshooting), it's the `caretakers` table — see the seed insert at the
+bottom of `supabase/schema.sql` for the shape.
 
 ## Testing the weekly email
 
@@ -150,11 +160,19 @@ early or late) falls back to whichever shift is closer in time.
 
 - The phone-number PIN is not real authentication — sign-in just checks it
   matches the selected caretaker's phone on file. Acceptable for this use
-  case; revisit if the app scope grows.
+  case; revisit if the app scope grows. The admin page is different: it
+  requires a real Supabase Auth login.
 - Because there's no login tying a browser to a caretaker, anyone who knows
-  (or guesses) a check-in's id could edit it via the Supabase API.
+  (or guesses) a check-in's id could edit it via the Supabase API. The
+  `caretakers` table doesn't have this problem — only an authenticated
+  admin can write to it.
 - The weekly email cron runs in UTC; adjust the `cron` line in
-  `.github/workflows/weekly-email.yml` for your timezone.
-- The rate on each check-in is captured at sign-in time (from
-  `caretakers.json`, or typed in for an unlisted entry), so past pay totals
-  don't change retroactively if you edit `caretakers.json` later.
+  `.github/workflows/weekly-email.yml` for your timezone (currently set for
+  7:15am MST, which has no DST to worry about).
+- The rate on each check-in is captured at sign-in time (from the
+  `caretakers` table, or typed in for an unlisted entry), so past pay
+  totals don't change retroactively if you edit a caretaker's rate later.
+- `admin.html` isn't linked from anywhere in the check-in app, but it's not
+  hidden either — anyone who finds/guesses the URL hits a real login wall,
+  so this is fine for an internal tool, just don't treat the URL itself as
+  a secret.
