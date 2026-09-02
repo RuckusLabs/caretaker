@@ -22,7 +22,14 @@
     <input type="text" id="name" autocomplete="name" placeholder="Your name" />
 
     <label for="phone">Phone number</label>
-    <input type="tel" id="phone" autocomplete="tel" placeholder="Your phone number" />
+    <input
+      type="tel"
+      id="phone"
+      autocomplete="tel"
+      inputmode="tel"
+      placeholder="(555) 555-1234"
+      maxlength="14"
+    />
 
     <button class="btn-primary" id="btn-signin">Sign In</button>
     <p class="error" id="signin-error"></p>
