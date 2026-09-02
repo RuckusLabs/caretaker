@@ -105,6 +105,14 @@
     phoneInput.value = formatPhoneNumber(phoneInput.value);
   });
 
+  function displayName(fullName) {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length < 2) return fullName;
+    const first = parts[0];
+    const lastInitial = parts[parts.length - 1][0];
+    return `${first} ${lastInitial}.`;
+  }
+
   async function loadCaretakers() {
     try {
       const res = await fetch("caretakers.json");
@@ -113,6 +121,8 @@
       console.error(err);
       caretakers = [];
     }
+
+    caretakers.sort((a, b) => a.name.localeCompare(b.name));
 
     nameInput.innerHTML = "";
     if (!caretakers.length) {
@@ -136,7 +146,7 @@
     caretakers.forEach((c) => {
       const opt = document.createElement("option");
       opt.value = c.name;
-      opt.textContent = c.name;
+      opt.textContent = displayName(c.name);
       nameInput.appendChild(opt);
     });
 
@@ -230,7 +240,7 @@
     showScreen("active");
     document.getElementById(
       "active-subtitle"
-    ).textContent = `${session.name} · ${session.phone}`;
+    ).textContent = `${displayName(session.name)} · ${session.phone}`;
     document.getElementById("shift-label").textContent = `${session.shift} shift`;
 
     renderChecklist(session);
