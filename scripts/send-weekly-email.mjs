@@ -119,6 +119,7 @@ function renderHtml(summaries, rows, since, until) {
       (s, i) => `
         <tr style="background:${i % 2 === 0 ? "#ffffff" : COLORS.accentSoft};">
           ${td(escapeHtml(s.name))}
+          ${td(escapeHtml(s.phone))}
           ${td(s.hours.toFixed(2))}
           ${td(s.rate != null ? formatCurrency(s.rate) + "/hr" : "—")}
           ${td(`<strong>${s.rate != null ? formatCurrency(s.hours * s.rate) : "—"}</strong>`)}
@@ -128,11 +129,12 @@ function renderHtml(summaries, rows, since, until) {
 
   const summaryTable = summaries.length
     ? `<table style="border-collapse:collapse;width:100%;max-width:560px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
-         <thead><tr>${th("Name")}${th("Hours")}${th("Rate")}${th("Amount")}</tr></thead>
+         <thead><tr>${th("Name")}${th("Phone")}${th("Hours")}${th("Rate")}${th("Amount")}</tr></thead>
          <tbody>${summaryRows}</tbody>
          <tfoot>
            <tr style="font-weight:bold;">
              ${td("Total")}
+             ${td("")}
              ${td(totalHours.toFixed(2))}
              ${td("")}
              ${td(formatCurrency(totalPay))}
