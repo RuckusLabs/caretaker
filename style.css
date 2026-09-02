@@ -86,17 +86,21 @@ label {
 }
 
 input[type="text"],
-input[type="tel"] {
+input[type="tel"],
+select {
   width: 100%;
   padding: 16px 18px;
   border: 2px solid var(--border);
   border-radius: 14px;
   font-size: 1.1rem;
   background: #fbfdfb;
+  font-family: inherit;
+  color: var(--text);
 }
 
 input[type="text"]:focus,
-input[type="tel"]:focus {
+input[type="tel"]:focus,
+select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);

@@ -70,12 +70,31 @@
 
   // ---- Sign in ----
 
+  const UNLISTED_VALUE = "__unlisted__";
+
   const nameInput = document.getElementById("name");
   const phoneInput = document.getElementById("phone");
   const signinError = document.getElementById("signin-error");
+  const signinBtn = document.getElementById("btn-signin");
+  const unlistedFields = document.getElementById("unlisted-fields");
+  const unlistedNameInput = document.getElementById("unlisted-name");
+  const unlistedRateInput = document.getElementById("unlisted-rate");
+  const phoneHint = document.getElementById("phone-hint");
+
+  let caretakers = [];
+
+  nameInput.addEventListener("change", () => {
+    const isUnlisted = nameInput.value === UNLISTED_VALUE;
+    unlistedFields.hidden = !isUnlisted;
+    phoneHint.hidden = isUnlisted;
+  });
+
+  function digitsOnly(value) {
+    return value.replace(/\D/g, "");
+  }
 
   function formatPhoneNumber(value) {
-    const digits = value.replace(/\D/g, "").slice(0, 10);
+    const digits = digitsOnly(value).slice(0, 10);
     const len = digits.length;
     if (len < 4) return digits;
     if (len < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
@@ -86,14 +105,80 @@
     phoneInput.value = formatPhoneNumber(phoneInput.value);
   });
 
+  async function loadCaretakers() {
+    try {
+      const res = await fetch("caretakers.json");
+      caretakers = await res.json();
+    } catch (err) {
+      console.error(err);
+      caretakers = [];
+    }
+
+    nameInput.innerHTML = "";
+    if (!caretakers.length) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No caretakers configured";
+      opt.disabled = true;
+      opt.selected = true;
+      nameInput.appendChild(opt);
+      signinBtn.disabled = true;
+      return;
+    }
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select your name";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    nameInput.appendChild(placeholder);
+
+    caretakers.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c.name;
+      opt.textContent = c.name;
+      nameInput.appendChild(opt);
+    });
+
+    const unlistedOpt = document.createElement("option");
+    unlistedOpt.value = UNLISTED_VALUE;
+    unlistedOpt.textContent = "Someone else (not listed)";
+    nameInput.appendChild(unlistedOpt);
+
+    signinBtn.disabled = false;
+  }
+
+  loadCaretakers();
+
   document.getElementById("btn-signin").addEventListener("click", async () => {
     signinError.textContent = "";
-    const name = nameInput.value.trim();
+    const selected = nameInput.value;
     const phone = phoneInput.value.trim();
+    const isUnlisted = selected === UNLISTED_VALUE;
 
-    if (!name || !phone) {
-      signinError.textContent = "Please enter your name and phone number.";
-      return;
+    let name, rate;
+
+    if (isUnlisted) {
+      name = unlistedNameInput.value.trim();
+      const rateValue = parseFloat(unlistedRateInput.value);
+      if (!name || !phone || !unlistedRateInput.value || Number.isNaN(rateValue) || rateValue < 0) {
+        signinError.textContent =
+          "Please enter your name, hourly rate, and phone number.";
+        return;
+      }
+      rate = rateValue;
+    } else {
+      if (!selected || !phone) {
+        signinError.textContent = "Please select your name and enter your phone number.";
+        return;
+      }
+      const caretaker = caretakers.find((c) => c.name === selected);
+      if (!caretaker || digitsOnly(phone) !== digitsOnly(caretaker.phone)) {
+        signinError.textContent = "That phone number doesn't match our records.";
+        return;
+      }
+      name = caretaker.name;
+      rate = caretaker.rate;
     }
 
     const shift = detectShift();
@@ -108,6 +193,7 @@
         .insert({
           name,
           phone,
+          rate,
           shift,
           signed_in_at: signedInAt,
           checklist,
@@ -327,8 +413,12 @@
 
   document.getElementById("btn-done").addEventListener("click", () => {
     localStorage.removeItem(SUMMARY_KEY);
-    nameInput.value = "";
+    nameInput.selectedIndex = 0;
     phoneInput.value = "";
+    unlistedNameInput.value = "";
+    unlistedRateInput.value = "";
+    unlistedFields.hidden = true;
+    phoneHint.hidden = false;
     showScreen("signin");
   });
 

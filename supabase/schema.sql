@@ -1,10 +1,15 @@
 -- Caretaker check-in app schema.
--- Run this once in the Supabase SQL editor for your project.
+-- Run this in the Supabase SQL editor for your project. This drops any
+-- existing checkins table first, so only run it when it's fine to lose
+-- whatever check-in history is already there.
 
-create table if not exists checkins (
+drop table if exists checkins cascade;
+
+create table checkins (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   phone text not null,
+  rate numeric,
   shift text not null check (shift in ('morning', 'afternoon')),
   signed_in_at timestamptz not null default now(),
   signed_out_at timestamptz,

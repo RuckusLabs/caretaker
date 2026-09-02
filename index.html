@@ -19,19 +19,36 @@
     <p class="subtitle">Sign in to start your shift.</p>
 
     <label for="name">Name</label>
-    <input type="text" id="name" autocomplete="name" placeholder="Your name" />
+    <select id="name">
+      <option value="" disabled selected>Loading...</option>
+    </select>
 
-    <label for="phone">Phone number</label>
+    <div id="unlisted-fields" hidden>
+      <label for="unlisted-name">Your name</label>
+      <input type="text" id="unlisted-name" autocomplete="name" placeholder="Your name" />
+
+      <label for="unlisted-rate">Your hourly rate ($)</label>
+      <input
+        type="number"
+        id="unlisted-rate"
+        inputmode="decimal"
+        step="0.01"
+        min="0"
+        placeholder="20.00"
+      />
+    </div>
+
+    <label for="phone">Phone number<span id="phone-hint"> (your PIN)</span></label>
     <input
       type="tel"
       id="phone"
-      autocomplete="tel"
+      autocomplete="off"
       inputmode="tel"
       placeholder="(555) 555-1234"
       maxlength="14"
     />
 
-    <button class="btn-primary" id="btn-signin">Sign In</button>
+    <button class="btn-primary" id="btn-signin" disabled>Sign In</button>
     <p class="error" id="signin-error"></p>
   </main>
 

@@ -1,6 +1,11 @@
-// Queries Supabase for the past week's completed check-ins, groups hours by
-// caretaker, and emails a summary table via Resend. Run by
+// Queries Supabase for the past week's completed check-ins, groups hours
+// and pay by caretaker, and emails a summary via Resend. Run by
 // .github/workflows/weekly-email.yml every Monday morning.
+//
+// The rate used is whatever was stored on the check-in row at sign-in time
+// (from caretakers.json for known caretakers, or typed in directly for an
+// "unlisted" entry) — not a fresh lookup — so this reflects what was true
+// at the time of the shift even if rates change later.
 
 const SUPABASE_URL = requireEnv("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -21,7 +26,7 @@ async function fetchLastWeeksCheckins() {
   since.setDate(since.getDate() - 7);
 
   const url = new URL(`${SUPABASE_URL}/rest/v1/checkins`);
-  url.searchParams.set("select", "name,phone,signed_in_at,signed_out_at");
+  url.searchParams.set("select", "name,phone,rate,signed_in_at,signed_out_at");
   url.searchParams.set("signed_out_at", `gte.${since.toISOString()}`);
 
   const res = await fetch(url, {
@@ -35,7 +40,7 @@ async function fetchLastWeeksCheckins() {
     throw new Error(`Supabase query failed: ${res.status} ${await res.text()}`);
   }
 
-  return res.json();
+  return { rows: await res.json(), since };
 }
 
 function summarize(rows) {
@@ -53,6 +58,7 @@ function summarize(rows) {
       name: row.name,
       phone: row.phone,
       hours: 0,
+      rate: row.rate ?? null,
     };
     existing.hours += hours;
     byCaretaker.set(key, existing);
@@ -61,66 +67,14 @@ function summarize(rows) {
   return [...byCaretaker.values()].sort((a, b) => b.hours - a.hours);
 }
 
-function renderHtml(summaries, rows) {
-  const summaryRows = summaries
-    .map(
-      (s) => `
-        <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${escapeHtml(s.name)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${s.hours.toFixed(2)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${escapeHtml(s.phone)}</td>
-        </tr>`
-    )
-    .join("");
-
-  const body = summaries.length
-    ? `<table style="border-collapse:collapse;width:100%;max-width:480px;font-family:sans-serif;font-size:14px;">
-         <thead>
-           <tr>
-             <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Name</th>
-             <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Hours</th>
-             <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Phone</th>
-           </tr>
-         </thead>
-         <tbody>${summaryRows}</tbody>
-       </table>`
-    : `<p style="font-family:sans-serif;">No completed shifts in the past week.</p>`;
-
-  const detailRows = [...rows]
-    .filter((row) => row.signed_out_at)
-    .sort((a, b) => new Date(a.signed_in_at) - new Date(b.signed_in_at))
-    .map(
-      (row) => `
-        <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${escapeHtml(row.name)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${formatDateTime(row.signed_in_at)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e4e9;">${formatDateTime(row.signed_out_at)}</td>
-        </tr>`
-    )
-    .join("");
-
-  const details = rows.length
-    ? `<details style="margin-top:20px;font-family:sans-serif;font-size:14px;">
-         <summary style="cursor:pointer;font-weight:bold;">All check-ins this week</summary>
-         <table style="border-collapse:collapse;width:100%;max-width:600px;margin-top:12px;">
-           <thead>
-             <tr>
-               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Name</th>
-               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Time in</th>
-               <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #1f2430;">Time out</th>
-             </tr>
-           </thead>
-           <tbody>${detailRows}</tbody>
-         </table>
-       </details>`
-    : "";
-
-  return `<div>
-    <h2 style="font-family:sans-serif;">Weekly Caretaker Summary</h2>
-    ${body}
-    ${details}
-  </div>`;
-}
+const COLORS = {
+  accent: "#2f9e58",
+  accentDark: "#1f7a41",
+  accentSoft: "#e5f5ea",
+  text: "#17301f",
+  muted: "#5b7364",
+  border: "#dbe8dd",
+};
 
 function formatDateTime(iso) {
   return new Date(iso).toLocaleString("en-US", {
@@ -130,6 +84,17 @@ function formatDateTime(iso) {
   });
 }
 
+function formatDate(date) {
+  return date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    dateStyle: "medium",
+  });
+}
+
+function formatCurrency(amount) {
+  return `$${amount.toFixed(2)}`;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -137,7 +102,91 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-async function sendEmail(html) {
+function renderHtml(summaries, rows, since, until) {
+  const totalHours = summaries.reduce((sum, s) => sum + s.hours, 0);
+  const totalPay = summaries.reduce(
+    (sum, s) => sum + (s.rate != null ? s.hours * s.rate : 0),
+    0
+  );
+
+  const th = (label) =>
+    `<th style="text-align:left;padding:10px 14px;border-bottom:2px solid ${COLORS.accentDark};color:${COLORS.accentDark};font-size:13px;text-transform:uppercase;letter-spacing:0.04em;">${label}</th>`;
+  const td = (content) =>
+    `<td style="padding:10px 14px;border-bottom:1px solid ${COLORS.border};">${content}</td>`;
+
+  const summaryRows = summaries
+    .map(
+      (s, i) => `
+        <tr style="background:${i % 2 === 0 ? "#ffffff" : COLORS.accentSoft};">
+          ${td(escapeHtml(s.name))}
+          ${td(s.hours.toFixed(2))}
+          ${td(s.rate != null ? formatCurrency(s.rate) + "/hr" : "—")}
+          ${td(`<strong>${s.rate != null ? formatCurrency(s.hours * s.rate) : "—"}</strong>`)}
+        </tr>`
+    )
+    .join("");
+
+  const summaryTable = summaries.length
+    ? `<table style="border-collapse:collapse;width:100%;max-width:560px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
+         <thead><tr>${th("Name")}${th("Hours")}${th("Rate")}${th("Amount")}</tr></thead>
+         <tbody>${summaryRows}</tbody>
+         <tfoot>
+           <tr style="font-weight:bold;">
+             ${td("Total")}
+             ${td(totalHours.toFixed(2))}
+             ${td("")}
+             ${td(formatCurrency(totalPay))}
+           </tr>
+         </tfoot>
+       </table>`
+    : `<p style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:${COLORS.muted};">No completed shifts in the past week.</p>`;
+
+  const detailRows = [...rows]
+    .filter((row) => row.signed_out_at)
+    .sort((a, b) => new Date(a.signed_in_at) - new Date(b.signed_in_at))
+    .map(
+      (row, i) => `
+        <tr style="background:${i % 2 === 0 ? "#ffffff" : COLORS.accentSoft};">
+          ${td(escapeHtml(row.name))}
+          ${td(formatDateTime(row.signed_in_at))}
+          ${td(formatDateTime(row.signed_out_at))}
+        </tr>`
+    )
+    .join("");
+
+  const details = rows.length
+    ? `<details style="margin-top:24px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
+         <summary style="cursor:pointer;font-weight:bold;color:${COLORS.accentDark};padding:8px 0;">
+           All check-ins this week (${rows.length})
+         </summary>
+         <table style="border-collapse:collapse;width:100%;max-width:600px;margin-top:12px;">
+           <thead><tr>${th("Name")}${th("Time in")}${th("Time out")}</tr></thead>
+           <tbody>${detailRows}</tbody>
+         </table>
+       </details>`
+    : "";
+
+  return `
+  <div style="background:#eef6ee;padding:32px 16px;">
+    <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${COLORS.border};">
+      <div style="background:${COLORS.accent};padding:24px 28px;">
+        <div style="font-size:28px;line-height:1;">🌿</div>
+        <h1 style="margin:8px 0 4px;color:#ffffff;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:20px;">
+          Weekly Caretaker Summary
+        </h1>
+        <p style="margin:0;color:#e5f5ea;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;">
+          ${formatDate(since)} – ${formatDate(until)}
+        </p>
+      </div>
+      <div style="padding:24px 28px 28px;">
+        ${summaryTable}
+        ${details}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function sendEmail(html, since, until) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -146,8 +195,8 @@ async function sendEmail(html) {
     },
     body: JSON.stringify({
       from: FROM_EMAIL,
-      to: [RECIPIENT_EMAIL],
-      subject: "Weekly Caretaker Summary",
+      to: RECIPIENT_EMAIL.split(",").map((email) => email.trim()),
+      subject: `🌿 Weekly Caretaker Summary (${formatDate(since)} – ${formatDate(until)})`,
       html,
     }),
   });
@@ -157,8 +206,9 @@ async function sendEmail(html) {
   }
 }
 
-const rows = await fetchLastWeeksCheckins();
+const until = new Date();
+const { rows, since } = await fetchLastWeeksCheckins();
 const summaries = summarize(rows);
-const html = renderHtml(summaries, rows);
-await sendEmail(html);
+const html = renderHtml(summaries, rows, since, until);
+await sendEmail(html, since, until);
 console.log(`Sent weekly summary for ${summaries.length} caretaker(s).`);

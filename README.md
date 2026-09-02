@@ -15,15 +15,21 @@ morning.
   completed shifts, and sends a summary email via [Resend](https://resend.com)
   (free tier).
 
-There's no login — anyone can type any name and phone number to sign in.
-This is an accepted tradeoff for a low-stakes, internal family/care tool.
+Caretakers pick their name from a dropdown (populated from `caretakers.json`)
+and enter their phone number as a PIN to sign in. There's no real
+authentication behind this — it just has to match the phone number on file —
+which is an accepted tradeoff for a low-stakes, internal family/care tool.
+A "Someone else (not listed)" option lets an unregistered person sign in by
+typing their own name, phone number, and hourly rate.
 
 ## Setup
 
 ### 1. Supabase
 
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL editor, run the contents of `supabase/schema.sql`.
+2. In the SQL editor, run the contents of `supabase/schema.sql`. Note: it
+   drops any existing `checkins` table first, so re-running it after schema
+   changes (like this) wipes prior check-in history.
 3. Under **Project Settings → API**, copy:
    - the **Project URL**
    - the **anon public** key
@@ -59,7 +65,7 @@ In the repo's **Settings → Secrets and variables → Actions**, add:
 | `SUPABASE_URL` | your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | your Supabase service_role key (keep secret) |
 | `RESEND_API_KEY` | your Resend API key |
-| `RECIPIENT_EMAIL` | the email address that should receive the weekly summary |
+| `RECIPIENT_EMAIL` | who receives the weekly summary — one email, or a comma-separated list (e.g. `a@x.com, b@y.com`) |
 | `FROM_EMAIL` (optional) | e.g. `Caretaker App <noreply@yourdomain.com>`, if you've verified a domain in Resend |
 
 You can trigger the workflow manually from the **Actions** tab
@@ -70,6 +76,21 @@ You can trigger the workflow manually from the **Actions** tab
 Repo **Settings → Pages** → set source to the branch this app lives on
 (root folder). The app will be served at your repo's Pages URL.
 
+## Editing the caretaker roster
+
+Edit `caretakers.json` — one entry per caretaker, with their name, phone
+number (digits only), and hourly rate:
+
+```json
+[{ "name": "Jane Doe", "phone": "5555550100", "rate": 20 }]
+```
+
+The frontend fetches this file to populate the name dropdown, check the
+phone/PIN, and attach each caretaker's rate to their check-in. The weekly
+email script doesn't read this file itself — it uses whatever rate was
+stored on each check-in row, so changing a rate here only affects future
+shifts.
+
 ## Editing the checklist
 
 Edit `checklists.js`. `general` items show on every shift; `morning` and
@@ -79,9 +100,13 @@ afternoon boundary.
 
 ## Known limitations
 
-- No authentication — sign-in is self-reported name/phone.
+- The phone-number PIN is not real authentication — sign-in just checks it
+  matches the selected caretaker's phone on file. Acceptable for this use
+  case; revisit if the app scope grows.
 - Because there's no login tying a browser to a caretaker, anyone who knows
-  (or guesses) a check-in's id could edit it via the Supabase API. Acceptable
-  for this use case; revisit if the app scope grows.
+  (or guesses) a check-in's id could edit it via the Supabase API.
 - The weekly email cron runs in UTC; adjust the `cron` line in
   `.github/workflows/weekly-email.yml` for your timezone.
+- The rate on each check-in is captured at sign-in time (from
+  `caretakers.json`, or typed in for an unlisted entry), so past pay totals
+  don't change retroactively if you edit `caretakers.json` later.
