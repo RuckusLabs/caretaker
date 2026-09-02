@@ -22,6 +22,11 @@ window.CARETAKER_CHECKLISTS = {
   ],
 };
 
-// Shift is auto-detected from the time of sign-in. Before this hour (24h
-// clock) counts as "morning"; at or after it counts as "afternoon".
-window.CARETAKER_SHIFT_CUTOFF_HOUR = 13;
+// Shift is auto-detected from the time of sign-in against these windows
+// (24h clock). A sign-in inside a window uses that shift; outside both
+// windows (e.g. someone signs in early/late), it falls back to whichever
+// shift is closer in time — see detectShift() in app.js.
+window.CARETAKER_SHIFT_WINDOWS = {
+  morning: { start: 7, end: 13 },
+  afternoon: { start: 16, end: 20 },
+};

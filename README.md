@@ -141,9 +141,10 @@ not what you want for routine style testing.
 ## Editing the checklist
 
 Edit `checklists.js`. `general` items show on every shift; `morning` and
-`afternoon` are shift-specific. The shift is auto-detected by time of day —
-change `CARETAKER_SHIFT_CUTOFF_HOUR` (24h clock) to adjust the morning/
-afternoon boundary.
+`afternoon` are shift-specific. The shift is auto-detected by time of day
+against `CARETAKER_SHIFT_WINDOWS` (24h clock) — by default morning is
+7am–1pm and afternoon is 4pm–8pm. Signing in outside both windows (running
+early or late) falls back to whichever shift is closer in time.
 
 ## Known limitations
 

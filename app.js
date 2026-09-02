@@ -22,8 +22,18 @@
   }
 
   function detectShift() {
-    const hour = new Date().getHours();
-    return hour < window.CARETAKER_SHIFT_CUTOFF_HOUR ? "morning" : "afternoon";
+    const now = new Date();
+    const hour = now.getHours() + now.getMinutes() / 60;
+    const { morning, afternoon } = window.CARETAKER_SHIFT_WINDOWS;
+
+    if (hour >= morning.start && hour < morning.end) return "morning";
+    if (hour >= afternoon.start && hour < afternoon.end) return "afternoon";
+
+    // Outside both windows: fall back to whichever shift is closer in time.
+    if (hour < morning.start) return "morning";
+    if (hour >= afternoon.end) return "afternoon";
+    const midpoint = (morning.end + afternoon.start) / 2;
+    return hour < midpoint ? "morning" : "afternoon";
   }
 
   function buildChecklist(shift) {
