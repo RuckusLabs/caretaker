@@ -295,7 +295,7 @@
         (c) => `
         <tr data-id="${c.id}">
           <td><input type="text" class="edit-name" value="${escapeHtml(c.name)}" /></td>
-          <td><input type="tel" class="edit-phone" value="${escapeHtml(c.phone)}" maxlength="14" /></td>
+          <td><input type="tel" class="edit-phone" value="${escapeHtml(formatPhoneNumber(c.phone))}" maxlength="14" /></td>
           <td><input type="number" class="edit-rate" value="${c.rate}" step="0.01" min="0" /></td>
           <td class="row-actions">
             <button class="btn-secondary btn-save">Save</button>
