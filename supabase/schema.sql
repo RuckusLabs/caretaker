@@ -76,15 +76,6 @@ create policy "admin can manage caretakers"
   using (true)
   with check (true);
 
--- One-time seed of the current roster. Safe to re-run: only inserts if the
--- table is empty, so it won't duplicate rows or overwrite edits made from
--- the admin page later.
-insert into caretakers (name, phone, rate)
-select * from (values
-  ('Martha', 'REDACTED-PHONE', 25),
-  ('Cinthya', 'REDACTED-PHONE', 25),
-  ('Audyna', 'REDACTED-PHONE', 20),
-  ('Melissa', 'REDACTED-PHONE', 25),
-  ('Malique Saldo', 'REDACTED-PHONE', 22)
-) as seed(name, phone, rate)
-where not exists (select 1 from caretakers);
+-- No seed data here on purpose — this repo is public, and caretaker names
+-- and phone numbers shouldn't be committed to it. Add your roster from the
+-- admin page (admin.html) after running this file instead.

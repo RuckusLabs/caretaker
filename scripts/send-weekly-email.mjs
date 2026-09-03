@@ -72,15 +72,15 @@ function getSampleCheckins() {
   return {
     since,
     rows: [
-      shift(6, 8, 4, "Martha", "REDACTED-PHONE", 25),
-      shift(5, 8, 4, "Martha", "REDACTED-PHONE", 25),
-      shift(6, 13, 5, "Cinthya", "REDACTED-PHONE", 25),
-      shift(4, 13, 5, "Cinthya", "REDACTED-PHONE", 25),
-      shift(3, 8, 6, "Sam Rivera", "(555) 010-0100", 18),
+      shift(6, 8, 4, "Jane Doe", "(555) 010-0100", 25),
+      shift(5, 8, 4, "Jane Doe", "(555) 010-0100", 25),
+      shift(6, 13, 5, "Sam Rivera", "(555) 010-0200", 25),
+      shift(4, 13, 5, "Sam Rivera", "(555) 010-0200", 25),
+      shift(3, 8, 6, "Alex Chen", "(555) 010-0300", 18),
       // An unfinished shift (no signed_out_at) to make sure it's excluded.
       {
-        name: "Audyna",
-        phone: "REDACTED-PHONE",
+        name: "Casey Kim",
+        phone: "(555) 010-0400",
         rate: 20,
         signed_in_at: new Date().toISOString(),
         signed_out_at: null,

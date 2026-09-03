@@ -122,8 +122,11 @@ rate only affects future shifts — each check-in stores the rate that was in
 effect at sign-in time, so past pay totals don't change retroactively.
 
 If you ever need to edit the roster directly in SQL instead (bulk import,
-troubleshooting), it's the `caretakers` table — see the seed insert at the
-bottom of `supabase/schema.sql` for the shape.
+troubleshooting), it's the `caretakers` table — see its `create table` in
+`supabase/schema.sql` for the shape (`name`, `phone`, `rate`). There's no
+seed data in that file on purpose, since this repo is public — add your
+actual roster from the admin page after running the schema, not by
+committing names/numbers into `schema.sql`.
 
 ## Testing the weekly email
 
