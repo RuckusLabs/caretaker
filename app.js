@@ -382,12 +382,12 @@
 
   document.getElementById("btn-signout").addEventListener("click", () => {
     showConfirm(
-      "Are you sure you want to sign out?",
+      "Are you sure you want to end your shift?",
       "Continue",
       () => {
         showConfirm(
-          "This will end your shift and cannot be undone. Sign out now?",
-          "Sign Out",
+          "This cannot be undone. End your shift now?",
+          "End Shift",
           performSignOut
         );
       }
@@ -440,7 +440,7 @@
     } catch (err) {
       console.error(err);
       activeError.textContent =
-        "Couldn't sign out — check your connection and try again.";
+        "Couldn't end shift — check your connection and try again.";
     }
   }
 

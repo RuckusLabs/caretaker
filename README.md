@@ -179,8 +179,10 @@ By default, notes only reach you in the weekly email or when you check the
 admin page. If you'd rather get an email the moment a caretaker submits
 notes at sign-out (instead of waiting), set up `supabase/notify-shift-notes.sql`:
 
-1. Open that file and fill in your real Resend API key and recipient email
-   in place of `YOUR_RESEND_API_KEY` and `YOUR_RECIPIENT_EMAIL`.
+1. Open that file and fill in your real Resend API key and recipient
+   email(s) in place of `YOUR_RESEND_API_KEY` and `YOUR_RECIPIENT_EMAIL`
+   (that one can be a single address or a comma-separated list, same as the
+   weekly email's `RECIPIENT_EMAIL` secret).
 2. Paste the filled-in version into the Supabase SQL editor and run it.
    **Don't commit the filled-in version** — this file embeds a real secret
    directly in SQL (unlike `schema.sql`, which never contains secrets),

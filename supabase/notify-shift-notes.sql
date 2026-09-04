@@ -3,9 +3,10 @@
 --
 -- This is NOT part of schema.sql on purpose: it embeds your real Resend
 -- API key directly in this SQL, and schema.sql is committed to this
--- public repo. Fill in the two placeholders below, then run this file
+-- public repo. Fill in the placeholders below, then run this file
 -- directly in the Supabase SQL editor — don't commit the filled-in
--- version anywhere.
+-- version anywhere. RECIPIENT_EMAILS can be one address or a
+-- comma-separated list, same as the weekly email's RECIPIENT_EMAIL secret.
 --
 -- How it works: a trigger on checkins fires after every update. It only
 -- actually sends an email when notes just went from empty to non-empty
@@ -26,6 +27,10 @@ as $$
 declare
   escaped_name text;
   escaped_notes text;
+  -- One address or a comma-separated list, e.g.
+  -- 'you@example.com, someone-else@example.com'
+  recipient_emails text := 'YOUR_RECIPIENT_EMAIL';
+  recipient_list jsonb;
 begin
   if new.notes is null or btrim(new.notes) = '' then
     return new;
@@ -39,6 +44,9 @@ begin
 
   escaped_name := replace(replace(replace(new.name, '&', '&amp;'), '<', '&lt;'), '>', '&gt;');
   escaped_notes := replace(replace(replace(new.notes, '&', '&amp;'), '<', '&lt;'), '>', '&gt;');
+  recipient_list := to_jsonb(array(
+    select btrim(e) from unnest(string_to_array(recipient_emails, ',')) as e
+  ));
 
   perform net.http_post(
     url := 'https://api.resend.com/emails',
@@ -48,7 +56,7 @@ begin
     ),
     body := jsonb_build_object(
       'from', 'Caretaker App <onboarding@resend.dev>',
-      'to', jsonb_build_array('YOUR_RECIPIENT_EMAIL'),
+      'to', recipient_list,
       'subject', '🌿 Shift note from ' || new.name,
       'html',
         '<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;color:#17301f;">' ||
