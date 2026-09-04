@@ -3,6 +3,8 @@
 // after them.
 window.CARETAKER_CHECKLISTS = {
   general: [
+    "Wipe down surfaces/general cleaning",
+    "Kitty dry food and water filled",
     "Kitty litter scooped",
     "Vacuum",
     "Laundry",
@@ -10,14 +12,16 @@ window.CARETAKER_CHECKLISTS = {
   ],
   morning: [
     "Check for cleaning/changing",
-    "Ask for tea/coffee/breakfast",
+    "Provide tea/coffee/breakfast",
+    "Provide Ensure",
     "Administer Amlodipine (1 tablet) with breakfast",
     "Keep eye on Elsie (tea, coffee, snacks)",
     "Before leaving, ensure Elsie is clean and has something to eat (lunch/snack)",
   ],
   afternoon: [
     "Check for cleaning/changing",
-    "Ask for snack/dinner",
+    "Provide Ensure",
+    "Provide snack/dinner",
     "Before leaving, ensure Elsie is clean and is tucked in with charged phone and water",
   ],
 };
