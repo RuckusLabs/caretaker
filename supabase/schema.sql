@@ -13,8 +13,17 @@ create table if not exists checkins (
   signed_in_at timestamptz not null default now(),
   signed_out_at timestamptz,
   checklist jsonb not null default '[]'::jsonb,
+  bowel_movement boolean not null default false,
+  ate text check (ate in ('some', 'most', 'all')),
+  notes text,
   created_at timestamptz not null default now()
 );
+
+-- If this table already existed before these end-of-shift fields were
+-- added, run:
+-- alter table checkins add column if not exists bowel_movement boolean not null default false;
+-- alter table checkins add column if not exists ate text check (ate in ('some', 'most', 'all'));
+-- alter table checkins add column if not exists notes text;
 
 alter table checkins enable row level security;
 

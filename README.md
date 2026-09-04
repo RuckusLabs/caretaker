@@ -159,6 +159,19 @@ against `CARETAKER_SHIFT_WINDOWS` (24h clock) — by default morning is
 7am–1pm and afternoon is 4pm–8pm. Signing in outside both windows (running
 early or late) falls back to whichever shift is closer in time.
 
+## End-of-shift fields
+
+Below the checklist, every shift also asks for:
+
+- **Bowel movement** — checkbox.
+- **Ate** — Some / Most / All (or left as "Not specified").
+- **Notes** — free text for anything notable during the shift.
+
+None of these are required to sign out. They're stored on the check-in row
+in Supabase (`bowel_movement`, `ate`, `notes`) and shown on the caretaker's
+own summary screen after signing out, and in the admin page's "All
+check-ins in range" detail table for any date range you review.
+
 ## Known limitations
 
 - The phone-number PIN is not real authentication — sign-in just checks it

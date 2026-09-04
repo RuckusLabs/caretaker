@@ -159,7 +159,7 @@
 
     const { data, error } = await supabase
       .from("checkins")
-      .select("name,phone,rate,shift,signed_in_at,signed_out_at")
+      .select("name,phone,rate,shift,signed_in_at,signed_out_at,bowel_movement,ate,notes")
       .gte("signed_out_at", startIso)
       .lte("signed_out_at", endIso)
       .order("signed_in_at", { ascending: true });
@@ -241,6 +241,8 @@
       return;
     }
 
+    const ateLabel = (ate) => (ate ? ate[0].toUpperCase() + ate.slice(1) : "—");
+
     const detailRows = completed
       .map(
         (row) => `
@@ -249,6 +251,9 @@
           <td style="text-transform:capitalize;">${escapeHtml(row.shift)}</td>
           <td>${formatDateTime(row.signed_in_at)}</td>
           <td>${formatDateTime(row.signed_out_at)}</td>
+          <td>${row.bowel_movement ? "Yes" : "No"}</td>
+          <td>${ateLabel(row.ate)}</td>
+          <td>${row.notes ? escapeHtml(row.notes) : "—"}</td>
         </tr>`
       )
       .join("");
@@ -257,7 +262,12 @@
       <details class="admin-details">
         <summary>All check-ins in range (${completed.length})</summary>
         <table class="admin-table">
-          <thead><tr><th>Name</th><th>Shift</th><th>Time in</th><th>Time out</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Name</th><th>Shift</th><th>Time in</th><th>Time out</th>
+              <th>BM</th><th>Ate</th><th>Notes</th>
+            </tr>
+          </thead>
           <tbody>${detailRows}</tbody>
         </table>
       </details>`;

@@ -249,6 +249,21 @@
 
   let timerInterval = null;
 
+  const bmCheckbox = document.getElementById("bm");
+  const ateSelect = document.getElementById("ate");
+  const notesInput = document.getElementById("notes");
+
+  function resetEndOfShiftFields() {
+    bmCheckbox.checked = false;
+    document.getElementById("bm-row").classList.remove("checked");
+    ateSelect.value = "";
+    notesInput.value = "";
+  }
+
+  bmCheckbox.addEventListener("change", () => {
+    document.getElementById("bm-row").classList.toggle("checked", bmCheckbox.checked);
+  });
+
   function renderActive(session) {
     showScreen("active");
     document.getElementById(
@@ -256,6 +271,7 @@
     ).textContent = `${displayName(session.name)} · ${session.phone}`;
     document.getElementById("shift-label").textContent = `${session.shift} shift`;
 
+    resetEndOfShiftFields();
     renderChecklist(session);
 
     if (timerInterval) clearInterval(timerInterval);
@@ -380,6 +396,9 @@
 
     const signedOutAt = new Date().toISOString();
     const activeError = document.getElementById("active-error");
+    const bowelMovement = bmCheckbox.checked;
+    const ate = ateSelect.value || null;
+    const notes = notesInput.value.trim() || null;
 
     try {
       const { error } = await supabase
@@ -387,6 +406,9 @@
         .update({
           signed_out_at: signedOutAt,
           checklist: session.checklist,
+          bowel_movement: bowelMovement,
+          ate,
+          notes,
         })
         .eq("id", session.id);
 
@@ -402,6 +424,9 @@
         signedInAt: session.signedInAt,
         signedOutAt,
         checklist: session.checklist,
+        bowelMovement,
+        ate,
+        notes,
       };
       localStorage.setItem(SUMMARY_KEY, JSON.stringify(summary));
       clearSession();
@@ -423,6 +448,20 @@
     document.getElementById("summary-signout").textContent = formatDateTime(
       summary.signedOutAt
     );
+    document.getElementById("summary-bm").textContent = summary.bowelMovement
+      ? "Yes"
+      : "No";
+    document.getElementById("summary-ate").textContent = summary.ate
+      ? summary.ate[0].toUpperCase() + summary.ate.slice(1)
+      : "Not specified";
+
+    const notesGroup = document.getElementById("summary-notes-group");
+    if (summary.notes) {
+      notesGroup.hidden = false;
+      document.getElementById("summary-notes").textContent = summary.notes;
+    } else {
+      notesGroup.hidden = true;
+    }
 
     const container = document.getElementById("summary-checklist");
     container.innerHTML = "";

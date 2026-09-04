@@ -69,6 +69,30 @@
 
     <div id="checklist-container"></div>
 
+    <div class="checklist-group">
+      <h2>End of shift</h2>
+
+      <div class="checklist-item" id="bm-row">
+        <input type="checkbox" id="bm" />
+        <label for="bm">Elsie had a bowel movement</label>
+      </div>
+
+      <label for="ate">How much did Elsie eat?</label>
+      <select id="ate">
+        <option value="">Not specified</option>
+        <option value="some">Some</option>
+        <option value="most">Most</option>
+        <option value="all">All</option>
+      </select>
+
+      <label for="notes">Notes (anything notable during the shift)</label>
+      <textarea
+        id="notes"
+        rows="4"
+        placeholder="Optional — mood, incidents, anything the next caretaker or family should know..."
+      ></textarea>
+    </div>
+
     <button class="btn-danger" id="btn-signout">Sign Out</button>
     <p class="error" id="active-error"></p>
   </main>
@@ -96,9 +120,23 @@
       <span id="summary-signout"></span>
     </div>
 
+    <div class="summary-row">
+      <span class="label">Bowel movement</span>
+      <span id="summary-bm"></span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Ate</span>
+      <span id="summary-ate"></span>
+    </div>
+
     <div class="checklist-group">
       <h2>Checklist completed</h2>
       <div id="summary-checklist"></div>
+    </div>
+
+    <div class="checklist-group" id="summary-notes-group" hidden>
+      <h2>Notes</h2>
+      <p id="summary-notes"></p>
     </div>
 
     <button class="btn-primary" id="btn-done">Done</button>
