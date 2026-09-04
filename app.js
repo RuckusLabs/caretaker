@@ -4,9 +4,14 @@
   const SESSION_KEY = "caretaker_active_session";
   const SUMMARY_KEY = "caretaker_last_summary";
 
+  // This app never logs in — it should always act as the anon role, even
+  // if an admin session for admin.html is sitting in this browser's local
+  // storage (same origin, same Supabase project). Disabling session
+  // persistence keeps the two pages' auth state fully independent.
   const supabase = window.supabase.createClient(
     window.CARETAKER_CONFIG.SUPABASE_URL,
-    window.CARETAKER_CONFIG.SUPABASE_ANON_KEY
+    window.CARETAKER_CONFIG.SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
   );
 
   const screens = {

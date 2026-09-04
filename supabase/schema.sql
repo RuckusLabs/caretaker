@@ -58,6 +58,15 @@ create policy "anon can select checkins"
   to anon
   using (true);
 
+-- The admin page (admin.html) reads check-in history while logged in via
+-- Supabase Auth, which makes its requests as "authenticated" rather than
+-- "anon" — so it needs its own select policy here too.
+drop policy if exists "authenticated can select checkins" on checkins;
+create policy "authenticated can select checkins"
+  on checkins for select
+  to authenticated
+  using (true);
+
 -- Caretaker roster, editable from the admin page. anon (the check-in app)
 -- can only read it, to populate the name dropdown and pull each
 -- caretaker's rate; only a logged-in (authenticated) admin user can add,
