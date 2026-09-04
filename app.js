@@ -231,6 +231,18 @@
 
       if (error) throw error;
 
+      if (isUnlisted) {
+        // Best-effort: add them to the roster so they show up in the
+        // dropdown next time. Ignore failures — this shouldn't block
+        // sign-in — and skip duplicates if this phone is already listed.
+        supabase
+          .from("caretakers")
+          .upsert({ name, phone, rate }, { onConflict: "phone", ignoreDuplicates: true })
+          .then(({ error: caretakerError }) => {
+            if (caretakerError) console.error(caretakerError);
+          });
+      }
+
       const session = {
         id: data.id,
         name,

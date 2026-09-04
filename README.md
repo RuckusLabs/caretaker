@@ -23,7 +23,10 @@ table in Supabase) and enter their phone number as a PIN to sign in. There's
 no real authentication behind this — it just has to match the phone number
 on file — which is an accepted tradeoff for a low-stakes, internal
 family/care tool. A "Someone else (not listed)" option lets an unregistered
-person sign in by typing their own name, phone number, and hourly rate.
+person sign in by typing their own name, phone number, and hourly rate —
+doing so also adds them to the `caretakers` table (matched/deduplicated by
+phone number), so they show up in the dropdown by name on their next shift
+instead of needing "Someone else" again.
 
 The admin page (`admin.html`), by contrast, sits behind a real login
 (Supabase Auth email/password) since it can edit rates and see full history —

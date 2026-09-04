@@ -68,9 +68,11 @@ create policy "authenticated can select checkins"
   using (true);
 
 -- Caretaker roster, editable from the admin page. anon (the check-in app)
--- can only read it, to populate the name dropdown and pull each
--- caretaker's rate; only a logged-in (authenticated) admin user can add,
--- edit, or remove caretakers.
+-- can read it, to populate the name dropdown and pull each caretaker's
+-- rate, and insert into it (when someone signs in via "Someone else",
+-- adding themselves so they show up in the dropdown next time). Only a
+-- logged-in (authenticated) admin user can edit or remove caretakers,
+-- or fix up a self-added entry.
 create table if not exists caretakers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -79,6 +81,10 @@ create table if not exists caretakers (
   created_at timestamptz not null default now()
 );
 
+-- Lets the app upsert-on-conflict when a "Someone else" sign-in matches an
+-- existing entry's phone, instead of creating a duplicate row each time.
+create unique index if not exists caretakers_phone_key on caretakers (phone);
+
 alter table caretakers enable row level security;
 
 drop policy if exists "anon can read caretakers" on caretakers;
@@ -86,6 +92,16 @@ create policy "anon can read caretakers"
   on caretakers for select
   to anon
   using (true);
+
+-- Lets the check-in app add a new caretaker itself after an unlisted
+-- ("Someone else") sign-in. Same open-entry tradeoff as checkins: no
+-- login means anyone could add junk rows, but this is a low-stakes
+-- internal tool and the admin page can delete anything unwanted.
+drop policy if exists "anon can add caretakers" on caretakers;
+create policy "anon can add caretakers"
+  on caretakers for insert
+  to anon
+  with check (true);
 
 drop policy if exists "admin can manage caretakers" on caretakers;
 create policy "admin can manage caretakers"
