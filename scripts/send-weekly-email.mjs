@@ -36,7 +36,7 @@ async function fetchLastWeeksCheckins() {
   const url = new URL(`${SUPABASE_URL}/rest/v1/checkins`);
   url.searchParams.set(
     "select",
-    "name,phone,rate,signed_in_at,signed_out_at,bowel_movement,ate,notes"
+    "name,phone,rate,signed_in_at,signed_out_at,bowel_movement,ate,notes,checklist"
   );
   url.searchParams.set("signed_out_at", `gte.${since.toISOString()}`);
 
@@ -72,6 +72,11 @@ function getSampleCheckins() {
       bowel_movement: false,
       ate: null,
       notes: null,
+      checklist: [
+        { text: "Check for cleaning/changing", checked: true },
+        { text: "Provide tea/coffee/breakfast", checked: true },
+        { text: "Kitty litter scooped", checked: false },
+      ],
       ...extra,
     };
   };
@@ -221,6 +226,13 @@ function renderHtml(summaries, rows, since, until) {
 
   const ateLabel = (ate) => (ate ? ate[0].toUpperCase() + ate.slice(1) : "—");
 
+  const checklistLabel = (checklist) => {
+    const items = Array.isArray(checklist) ? checklist : [];
+    if (!items.length) return "—";
+    const checkedCount = items.filter((i) => i.checked).length;
+    return `${checkedCount}/${items.length}`;
+  };
+
   const detailRows = [...rows]
     .filter((row) => row.signed_out_at)
     .sort((a, b) => new Date(a.signed_in_at) - new Date(b.signed_in_at))
@@ -232,6 +244,7 @@ function renderHtml(summaries, rows, since, until) {
           ${td(formatDateTime(row.signed_out_at))}
           ${td(row.bowel_movement ? "Yes" : "No")}
           ${td(ateLabel(row.ate))}
+          ${td(checklistLabel(row.checklist))}
           ${td(row.notes ? escapeHtml(row.notes) : "—")}
         </tr>`
     )
@@ -246,7 +259,7 @@ function renderHtml(summaries, rows, since, until) {
            <thead>
              <tr>
                ${th("Name")}${th("Time in")}${th("Time out")}
-               ${th("BM")}${th("Ate")}${th("Notes")}
+               ${th("BM")}${th("Ate")}${th("Checklist")}${th("Notes")}
              </tr>
            </thead>
            <tbody>${detailRows}</tbody>

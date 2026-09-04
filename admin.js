@@ -159,7 +159,7 @@
 
     const { data, error } = await supabase
       .from("checkins")
-      .select("name,phone,rate,shift,signed_in_at,signed_out_at,bowel_movement,ate,notes")
+      .select("name,phone,rate,shift,signed_in_at,signed_out_at,bowel_movement,ate,notes,checklist")
       .gte("signed_out_at", startIso)
       .lte("signed_out_at", endIso)
       .order("signed_in_at", { ascending: true });
@@ -243,6 +243,23 @@
 
     const ateLabel = (ate) => (ate ? ate[0].toUpperCase() + ate.slice(1) : "—");
 
+    const checklistCell = (checklist) => {
+      const items = Array.isArray(checklist) ? checklist : [];
+      if (!items.length) return "—";
+      const checkedCount = items.filter((i) => i.checked).length;
+      const itemRows = items
+        .map(
+          (item) =>
+            `<div>${item.checked ? "☑" : "☐"} ${escapeHtml(item.text)}</div>`
+        )
+        .join("");
+      return `
+        <details>
+          <summary style="cursor:pointer;">${checkedCount}/${items.length} completed</summary>
+          <div style="margin-top:6px;font-size:0.9rem;">${itemRows}</div>
+        </details>`;
+    };
+
     const detailRows = completed
       .map(
         (row) => `
@@ -254,6 +271,7 @@
           <td>${row.bowel_movement ? "Yes" : "No"}</td>
           <td>${ateLabel(row.ate)}</td>
           <td>${row.notes ? escapeHtml(row.notes) : "—"}</td>
+          <td>${checklistCell(row.checklist)}</td>
         </tr>`
       )
       .join("");
@@ -265,7 +283,7 @@
           <thead>
             <tr>
               <th>Name</th><th>Shift</th><th>Time in</th><th>Time out</th>
-              <th>BM</th><th>Ate</th><th>Notes</th>
+              <th>BM</th><th>Ate</th><th>Notes</th><th>Checklist</th>
             </tr>
           </thead>
           <tbody>${detailRows}</tbody>

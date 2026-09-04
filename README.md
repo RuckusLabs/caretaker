@@ -176,6 +176,12 @@ own summary screen after signing out, in the weekly email's "All check-ins"
 detail table, and in the admin page's "All check-ins in range" detail table
 for any date range you review.
 
+Which checklist items were actually checked off is tracked too (it was
+always saved to the check-in row, in `checklist`) and shown alongside the
+above: the weekly email shows a quick count (e.g. "4/6"), and the admin
+page's detail table has an expandable "4/6 completed" per row that lists
+every item and whether it was checked.
+
 ### Instant email when notes are submitted
 
 By default, notes only reach you in the weekly email or when you check the
