@@ -34,7 +34,10 @@ async function fetchLastWeeksCheckins() {
   since.setDate(since.getDate() - 7);
 
   const url = new URL(`${SUPABASE_URL}/rest/v1/checkins`);
-  url.searchParams.set("select", "name,phone,rate,signed_in_at,signed_out_at");
+  url.searchParams.set(
+    "select",
+    "name,phone,rate,signed_in_at,signed_out_at,bowel_movement,ate,notes"
+  );
   url.searchParams.set("signed_out_at", `gte.${since.toISOString()}`);
 
   const res = await fetch(url, {
@@ -55,7 +58,7 @@ function getSampleCheckins() {
   const since = new Date();
   since.setDate(since.getDate() - 7);
 
-  const shift = (daysAgo, startHour, hours, name, phone, rate) => {
+  const shift = (daysAgo, startHour, hours, name, phone, rate, extra = {}) => {
     const signedIn = new Date();
     signedIn.setDate(signedIn.getDate() - daysAgo);
     signedIn.setHours(startHour, 0, 0, 0);
@@ -66,17 +69,31 @@ function getSampleCheckins() {
       rate,
       signed_in_at: signedIn.toISOString(),
       signed_out_at: signedOut.toISOString(),
+      bowel_movement: false,
+      ate: null,
+      notes: null,
+      ...extra,
     };
   };
 
   return {
     since,
     rows: [
-      shift(6, 8, 4, "Jane Doe", "(555) 010-0100", 25),
-      shift(5, 8, 4, "Jane Doe", "(555) 010-0100", 25),
-      shift(6, 13, 5, "Sam Rivera", "(555) 010-0200", 25),
-      shift(4, 13, 5, "Sam Rivera", "(555) 010-0200", 25),
-      shift(3, 8, 6, "Alex Chen", "(555) 010-0300", 18),
+      shift(6, 8, 4, "Jane Doe", "(555) 010-0100", 25, {
+        bowel_movement: true,
+        ate: "most",
+      }),
+      shift(5, 8, 4, "Jane Doe", "(555) 010-0100", 25, {
+        bowel_movement: false,
+        ate: "some",
+        notes: "Seemed a bit tired this morning, napped after breakfast.",
+      }),
+      shift(6, 13, 5, "Sam Rivera", "(555) 010-0200", 25, { ate: "all" }),
+      shift(4, 13, 5, "Sam Rivera", "(555) 010-0200", 25, { ate: "most" }),
+      shift(3, 8, 6, "Alex Chen", "(555) 010-0300", 18, {
+        bowel_movement: true,
+        ate: "some",
+      }),
       // An unfinished shift (no signed_out_at) to make sure it's excluded.
       {
         name: "Casey Kim",
@@ -84,6 +101,9 @@ function getSampleCheckins() {
         rate: 20,
         signed_in_at: new Date().toISOString(),
         signed_out_at: null,
+        bowel_movement: false,
+        ate: null,
+        notes: null,
       },
     ],
   };
@@ -199,6 +219,8 @@ function renderHtml(summaries, rows, since, until) {
        </table>`
     : `<p style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:${COLORS.muted};">No completed shifts in the past week.</p>`;
 
+  const ateLabel = (ate) => (ate ? ate[0].toUpperCase() + ate.slice(1) : "—");
+
   const detailRows = [...rows]
     .filter((row) => row.signed_out_at)
     .sort((a, b) => new Date(a.signed_in_at) - new Date(b.signed_in_at))
@@ -208,6 +230,9 @@ function renderHtml(summaries, rows, since, until) {
           ${td(escapeHtml(row.name))}
           ${td(formatDateTime(row.signed_in_at))}
           ${td(formatDateTime(row.signed_out_at))}
+          ${td(row.bowel_movement ? "Yes" : "No")}
+          ${td(ateLabel(row.ate))}
+          ${td(row.notes ? escapeHtml(row.notes) : "—")}
         </tr>`
     )
     .join("");
@@ -218,7 +243,12 @@ function renderHtml(summaries, rows, since, until) {
            All check-ins this week (${rows.length})
          </summary>
          <table style="border-collapse:collapse;width:100%;max-width:600px;margin-top:12px;">
-           <thead><tr>${th("Name")}${th("Time in")}${th("Time out")}</tr></thead>
+           <thead>
+             <tr>
+               ${th("Name")}${th("Time in")}${th("Time out")}
+               ${th("BM")}${th("Ate")}${th("Notes")}
+             </tr>
+           </thead>
            <tbody>${detailRows}</tbody>
          </table>
        </details>`

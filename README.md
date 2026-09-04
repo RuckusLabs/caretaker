@@ -169,8 +169,33 @@ Below the checklist, every shift also asks for:
 
 None of these are required to sign out. They're stored on the check-in row
 in Supabase (`bowel_movement`, `ate`, `notes`) and shown on the caretaker's
-own summary screen after signing out, and in the admin page's "All
-check-ins in range" detail table for any date range you review.
+own summary screen after signing out, in the weekly email's "All check-ins"
+detail table, and in the admin page's "All check-ins in range" detail table
+for any date range you review.
+
+### Instant email when notes are submitted
+
+By default, notes only reach you in the weekly email or when you check the
+admin page. If you'd rather get an email the moment a caretaker submits
+notes at sign-out (instead of waiting), set up `supabase/notify-shift-notes.sql`:
+
+1. Open that file and fill in your real Resend API key and recipient email
+   in place of `YOUR_RESEND_API_KEY` and `YOUR_RECIPIENT_EMAIL`.
+2. Paste the filled-in version into the Supabase SQL editor and run it.
+   **Don't commit the filled-in version** — this file embeds a real secret
+   directly in SQL (unlike `schema.sql`, which never contains secrets),
+   which is why it's kept out of the normal setup flow.
+3. That's it — no code deploy, no Edge Function. It works via a Postgres
+   trigger that calls Resend directly (using the `pg_net` extension, the
+   same mechanism behind Supabase's own Database Webhooks) whenever a
+   check-in's `notes` field goes from empty to non-empty on a completed
+   shift. It fires exactly once per shift with notes — not on every
+   checklist-toggle update during the shift, and not if notes are left
+   blank.
+
+If you ever need to change the embedded key/recipient later, just re-run
+the file with updated values — `create or replace function` and the
+`drop trigger if exists` make it safe to re-run.
 
 ## Known limitations
 
